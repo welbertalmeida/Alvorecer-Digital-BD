@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Lista de Entregas - Alvorecer Digital</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #eef3ff; margin: 0; padding: 25px; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #0056b3; margin-bottom: 25px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table th, table td { padding: 14px; border-bottom: 1px solid #ccc; text-align: left; }
+    table th { background: #0056b3; color: white; }
+    .btn-inicio { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #b0c4de; text-decoration: none; color: #333; border-radius: 5px; font-weight: bold; }
+    .btn-novo { background: #28a745; padding: 12px 20px; font-size: 16px; margin-bottom: 15px; display: block; width: 100%; max-width: 200px; color: white; border: none; cursor: pointer; border-radius: 5px;}
+</style>
+</head>
+<body>
+
+<a href="../telainicial.html" class="btn-inicio">⬅ Voltar ao Início</a>
+
+<div class="container">
+    <h1>Lista de Entregas Realizadas</h1>
+    <button class="btn-novo" onclick="window.location.href='entregar.html'">+ Nova Entrega</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Data</th>
+                <th>ID Beneficiário</th>
+            </tr>
+        </thead>
+        <tbody id="listaEntregas">
+            <tr><td colspan="3">Carregando...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // CHAVES DE CONEXÃO COM O BANCO DE DADOS
+    const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    async function carregarLista() {
+        const tabela = document.getElementById("listaEntregas");
+        
+  
+        const { data, error } = await supabase
+            .from('entregas')
+            .select('*, beneficiarios(nome_crianca)')
+            .order('created_at', { ascending: false });
+
+        if(error) {
+            tabela.innerHTML = "Erro: " + error.message;
+            return;
+        }
+
+        if(data.length === 0) {
+            tabela.innerHTML = "<tr><td colspan='3'>Nenhuma entrega registrada.</td></tr>";
+            return;
+        }
+
+        tabela.innerHTML = "";
+        data.forEach(ent => {
+            // Tratamento caso o beneficiário tenha sido excluído (evita erro)
+            const nomeBeneficiario = ent.beneficiarios ? ent.beneficiarios.nome_crianca : '(Excluído)';
+
+            tabela.innerHTML += `
+                <tr>
+                    <td>#${ent.id}</td>
+                    <td>${ent.data_entrega}</td>
+                    <td>
+                        <strong>${nomeBeneficiario}</strong>
+                        <br>
+                        <button onclick="verDetalhes(${ent.id})" style="font-size:12px; margin-top:5px; cursor:pointer; color:blue; text-decoration:underline; border:none; background:none;">
+                            Ver itens entregues
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    window.verDetalhes = function(id) {
+        // Redireciona para a página de detalhes passando o ID na URL
+        window.location.href = "modificarentrega.html?id=" + id;
+    }
+
+    carregarLista();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Alvorecer Digital - Estoque Geral</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #eaf2ff; margin: 0; padding: 20px; }
+    .btn-inicio { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #b0c4de; text-decoration: none; color: #333; border-radius: 5px; font-weight: bold; }
+    header { background: #1e4f9a; color: white; padding: 15px; text-align: center; font-size: 25px; font-weight: bold; border-radius: 8px; }
+    .container { width: 90%; max-width: 900px; margin: 30px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #0003; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table, th, td { border: 1px solid #ccc; }
+    th { background: #1e4f9a; color: white; padding: 10px; }
+    td { padding: 8px; text-align: center; }
+    button { background: #1e4f9a; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #163d78; }
+</style>
+</head>
+<body>
+
+<a href="../telainicial.html" class="btn-inicio">⬅ Voltar ao Início</a>
+<header>Alvorecer Digital – Estoque Geral</header>
+
+<div class="container">
+    <h2>Resumo por Categoria (Banco de Dados)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Categoria</th>
+                <th>Quantidade Total</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaCategorias">
+            <tr><td colspan="3">Carregando dados do Supabase...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // CHAVES DE CONEXÃO COM O BANCO DE DADOS
+    const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    async function carregarEstoqueGeral() {
+        const tabela = document.getElementById("tabelaCategorias");
+        
+        // Busca APENAS itens com quantidade maior que 0 para a soma
+        const { data, error } = await supabase
+            .from('estoque')
+            .select('*')
+            .gt('quantidade', 0); // Filtra os zerados na soma também
+
+        if (error) {
+            tabela.innerHTML = `<tr><td colspan="3" style="color:red">Erro: ${error.message}</td></tr>`;
+            return;
+        }
+
+        const categorias = {};
+        data.forEach(item => {
+            const cat = item.categoria || 'Sem Categoria';
+            if (!categorias[cat]) categorias[cat] = 0;
+            categorias[cat] += item.quantidade;
+        });
+
+        tabela.innerHTML = "";
+        
+        if (Object.keys(categorias).length === 0) {
+            tabela.innerHTML = `<tr><td colspan="3">Estoque vazio (sem itens disponíveis).</td></tr>`;
+            return;
+        }
+
+        for (let cat in categorias) {
+            tabela.innerHTML += `
+                <tr>
+                    <td>${cat}</td>
+                    <td>${categorias[cat]}</td>
+                    <td>
+                        <button onclick="verDetalhes('${cat}')">Ver Detalhes</button>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    // Função global para redirecionar com parâmetro
+    window.verDetalhes = function(categoria) {
+        // Codifica para URL (ex: "Higiene Pessoal" vira "Higiene%20Pessoal")
+        window.location.href = "estoquedata.html?categoria=" + encodeURIComponent(categoria);
+    }
+
+    carregarEstoqueGeral();
+</script>
+</body>
+</html>

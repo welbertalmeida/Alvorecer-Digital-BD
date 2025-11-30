@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Detalhes da Entrega - Alvorecer Digital</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #eef3ff; margin: 0; padding: 25px; }
+    .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #0056b3; margin-bottom: 20px; }
+    .info-box { background: #e4edff; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .info-box p { margin: 6px 0; font-size: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table th, table td { padding: 12px; border-bottom: 1px solid #ccc; text-align: left; }
+    table th { background: #0056b3; color: white; }
+    .btn-voltar { margin-top: 20px; padding: 12px; width: 100%; background: #0056b3; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 17px; }
+    .btn-voltar:hover { background: #003f82; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Detalhes da Entrega</h1>
+
+    <div class="info-box">
+        <p><strong>Número da Entrega:</strong> <span id="idEntrega">...</span></p>
+        <p><strong>Beneficiário:</strong> <span id="nomeBeneficiario">Carregando...</span></p>
+        <p><strong>Data da Entrega:</strong> <span id="dataEntrega">...</span></p>
+    </div>
+
+    <h2>Itens Entregues</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantidade</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaItens">
+            <tr><td colspan="2">Carregando itens...</td></tr>
+        </tbody>
+    </table>
+
+    <button class="btn-voltar" onclick="window.location.href='listaentregas.html'">Voltar para a Lista</button>
+</div>
+
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // CHAVES DE CONEXÃO COM O BANCO DE DADOS
+    const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    async function carregarDetalhes() {
+        // 1. Pega o ID da URL (ex: modificarentrega.html?id=5)
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+
+        if(!id) { alert("Entrega não encontrada."); return; }
+
+        // 2. Busca Cabeçalho da Entrega
+        const { data: entrega, error } = await supabase
+            .from('entregas')
+            .select('*, beneficiarios(nome_crianca)')
+            .eq('id', id)
+            .single();
+
+        if(error) { alert("Erro: " + error.message); return; }
+
+        document.getElementById("idEntrega").innerText = "#" + entrega.id;
+        document.getElementById("dataEntrega").innerText = entrega.data_entrega;
+        document.getElementById("nomeBeneficiario").innerText = entrega.beneficiarios ? entrega.beneficiarios.nome_crianca : "(Desconhecido)";
+
+        const { data: itens } = await supabase
+            .from('itens_entrega')
+            .select('*')
+            .eq('entrega_id', id);
+
+        const tbody = document.getElementById("tabelaItens");
+        tbody.innerHTML = "";
+
+        if(itens && itens.length > 0) {
+            itens.forEach(i => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${i.nome_item_snapshot}</td>
+                        <td>${i.quantidade}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = "<tr><td colspan='2'>Nenhum item encontrado.</td></tr>";
+        }
+    }
+
+    carregarDetalhes();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Alvorecer Digital - Doadores</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #e8f1ff; margin: 0; padding: 20px; }
+        .topo { text-align: center; background: #1e4fa8; color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .btn-inicio { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #b0c4de; text-decoration: none; color: #333; border-radius: 5px; font-weight: bold; }
+        .conteudo { padding: 0; max-width: 900px; margin: auto; }
+        .btn-primario { background: #1e4fa8; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 20px; font-size: 16px; font-weight: bold; }
+        .btn-primario:hover { background: #143b7a; }
+        .tabela { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .tabela th { background: #d6e6ff; padding: 15px; text-align: left; color: #1e4fa8; }
+        .tabela td { padding: 15px; border-bottom: 1px solid #ddd; }
+        .btn-acao { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-editar { background: #1e72d6; color: white; }
+        .btn-excluir { background: #d43535; color: white; }
+    </style>
+</head>
+<body>
+
+    <a href="../telainicial.html" class="btn-inicio">⬅ Voltar ao Início</a>
+
+    <header class="topo">
+        <h1>Alvorecer Digital</h1>
+        <h2>Lista de Doadores (Banco de Dados)</h2>
+    </header>
+
+    <main class="conteudo">
+        <button class="btn-primario" onclick="window.location.href='telaDoador.html'">
+            + Cadastrar Novo Doador
+        </button>
+
+        <table class="tabela">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>CPF</th>
+                    <th>Telefone</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="listaDoadores">
+                <tr><td colspan="4" style="text-align:center">Carregando dados do Supabase...</td></tr>
+            </tbody>
+        </table>
+    </main>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // CHAVES DE CONEXÃO COM O BANCO DE DADOS
+        const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        // Função para carregar a tabela
+        async function carregarTabela() {
+            const tabela = document.getElementById("listaDoadores");
+            
+            const { data, error } = await supabase
+                .from('doadores')
+                .select('*')
+                .order('created_at', { ascending: false }) 
+
+            if (error) {
+                tabela.innerHTML = `<tr><td colspan="4" style="color:red">Erro: ${error.message}</td></tr>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                tabela.innerHTML = `<tr><td colspan="4" style="text-align:center">Nenhum doador encontrado. Cadastre o primeiro!</td></tr>`;
+                return;
+            }
+
+            tabela.innerHTML = ""; // Limpa o "Carregando..."
+
+            data.forEach(d => {
+                const linha = document.createElement("tr");
+                linha.innerHTML = `
+                    <td>${d.nome}</td>
+                    <td>${d.cpf}</td>
+                    <td>${d.telefone || '-'}</td>
+                    <td>
+                        <button class="btn-acao btn-excluir" onclick="excluirDoador(${d.id})">Excluir</button>
+                    </td>
+                `;
+                tabela.appendChild(linha);
+            });
+        }
+
+        // Função de excluir (Exposta globalmente)
+        window.excluirDoador = async function(id) {
+            if(confirm("Tem certeza que deseja apagar este registro do banco permanentemente?")) {
+                const { error } = await supabase
+                    .from('doadores')
+                    .delete()
+                    .eq('id', id)
+                
+                if(error) alert("Erro ao excluir: " + error.message);
+                else {
+                    alert("Excluído com sucesso!");
+                    carregarTabela(); // Recarrega a lista
+                }
+            }
+        }
+
+        // Inicia o carregamento
+        carregarTabela();
+    </script>
+
+</body>
+</html>

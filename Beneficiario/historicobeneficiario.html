@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Histórico do Beneficiário - Alvorecer Digital</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #eef3ff;
+        margin: 0;
+        padding: 25px;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 0 12px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+        text-align: center;
+        color: #0056b3;
+        margin-bottom: 20px;
+    }
+
+    .info-box {
+        background: #e4edff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .info-box p {
+        margin: 6px 0;
+        font-size: 16px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    table th, table td {
+        padding: 12px;
+        border-bottom: 1px solid #ccc;
+        text-align: left;
+    }
+
+    table th {
+        background: #0056b3;
+        color: white;
+    }
+
+    .btn-voltar {
+        margin-top: 20px;
+        padding: 12px;
+        width: 100%;
+        background: #0056b3;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 17px;
+    }
+
+    .btn-voltar:hover {
+        background: #003f82;
+    }
+
+    .btn-inicio {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 15px;
+        background: #e0e0e0;
+        text-decoration: none;
+        color: #333;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    .btn-inicio:hover {
+        background: #ccc;
+    }
+</style>
+</head>
+
+<body>
+
+    <a href="../telainicial.html" class="btn-inicio">⬅ Voltar ao Início</a>
+
+<div class="container">
+    <h1>Histórico do Beneficiário</h1>
+
+    <div class="info-box">
+        <p><strong>Nome da Criança:</strong> <span id="nomeCrianca">Carregando...</span></p>
+        <p><strong>Responsável:</strong> <span id="nomeResponsavel">Carregando...</span></p>
+        <p><strong>Idade:</strong> <span id="idadeCrianca">Carregando...</span></p>
+    </div>
+
+    <h2>Entregas Recebidas</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Itens Recebidos</th>
+                <th>Quantidade Total</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaHistorico">
+            </tbody>
+    </table>
+
+    <button class="btn-voltar" onclick="voltar()">Voltar para a Lista</button>
+</div>
+
+<script>
+    /////////////////////////// Exemplo de dados
+    const beneficiario = {
+        nome: "João Pedro",
+        responsavel: "Maria Silva",
+        idade: 10
+    };
+
+    const historicoEntregas = [
+        {
+            data: "12/02/2025",
+            itens: "Alimentos, Roupas",
+            quantidade: 8
+        },
+        {
+            data: "28/01/2025",
+            itens: "Brinquedos",
+            quantidade: 3
+        },
+        {
+            data: "15/12/2024",
+            itens: "Alimentos",
+            quantidade: 5
+        }
+    ];
+
+    // Preencher informações do beneficiário
+    document.getElementById("nomeCrianca").innerText = beneficiario.nome;
+    document.getElementById("nomeResponsavel").innerText = beneficiario.responsavel;
+    document.getElementById("idadeCrianca").innerText = beneficiario.idade + " anos";
+
+    // Preencher tabela de entregas
+    const tabela = document.getElementById("tabelaHistorico");
+
+    historicoEntregas.forEach(entrega => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${entrega.data}</td>
+            <td>${entrega.itens}</td>
+            <td>${entrega.quantidade}</td>
+        `;
+
+        tabela.appendChild(row);
+    });
+
+    function voltar() {
+        // Redireciona para lista de beneficiários na mesma pasta
+        window.location.href = "listaBeneficiarios.html";
+    }
+</script>
+
+</body>
+</html>

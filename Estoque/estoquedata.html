@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Alvorecer Digital - Estoque Detalhado</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #eaf2ff; margin: 0; padding: 20px; }
+    .btn-inicio { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #b0c4de; text-decoration: none; color: #333; border-radius: 5px; font-weight: bold; }
+    header { background: #1e4f9a; color: white; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; border-radius: 8px; }
+    .container { width: 90%; max-width: 900px; margin: 25px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #0003; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table, th, td { border: 1px solid #ccc; }
+    th { background: #1e4f9a; color: white; padding: 10px; text-align: left; }
+    td { padding: 10px; }
+    .btn-voltar { margin-top: 20px; padding: 12px; width: 100%; background: #1e4f9a; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+    .btn-voltar:hover { background: #163d78; }
+</style>
+</head>
+<body>
+
+<a href="../telainicial.html" class="btn-inicio">⬅ Voltar ao Início</a>
+<header>Estoque Detalhado (Banco de Dados)</header>
+
+<div class="container">
+    <h2 id="tituloPagina">Itens Individuais</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Categoria</th>
+                <th>Qtd</th>
+                <th>Origem</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaDetalhes">
+            <tr><td colspan="5">Carregando...</td></tr>
+        </tbody>
+    </table>
+    <button class="btn-voltar" onclick="window.location.href='estoquegeral.html'">Voltar para Visão Geral</button>
+</div>
+
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // CHAVES DE CONEXÃO COM O BANCO DE DADOS
+    const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    async function carregarDetalhes() {
+        const tabela = document.getElementById("tabelaDetalhes");
+        const titulo = document.getElementById("tituloPagina");
+
+        // 1. Verificar se tem filtro na URL (?categoria=X)
+        const params = new URLSearchParams(window.location.search);
+        const categoriaFiltro = params.get('categoria');
+
+        // Construção da Query (Consulta)
+        let query = supabase
+            .from('estoque')
+            .select('*')
+            .gt('quantidade', 0);
+
+        // Se tiver categoria na URL, adiciona mais um filtro
+        if (categoriaFiltro) {
+            query = query.eq('categoria', categoriaFiltro); //  Filtra pela categoria
+            titulo.innerText = `Itens da Categoria: ${categoriaFiltro}`;
+        } else {
+            titulo.innerText = "Todos os Itens em Estoque";
+        }
+
+        // Executa a busca ordenando por nome
+        const { data, error } = await query.order('nome_item');
+
+        if (error) {
+            tabela.innerHTML = `<tr><td colspan="5" style="color:red">Erro: ${error.message}</td></tr>`;
+            return;
+        }
+
+        if (data.length === 0) {
+            tabela.innerHTML = `<tr><td colspan="5" style="text-align:center">Nenhum item disponível nesta categoria.</td></tr>`;
+            return;
+        }
+
+        tabela.innerHTML = "";
+        data.forEach(e => {
+            tabela.innerHTML += `
+                <tr>
+                    <td>${e.nome_item}</td>
+                    <td>${e.categoria}</td>
+                    <td>${e.quantidade}</td>
+                    <td>${e.origem || '-'}</td>
+                    <td>${e.data_entrada || '-'}</td>
+                </tr>
+            `;
+        });
+    }
+
+    carregarDetalhes();
+</script>
+</body>
+</html>

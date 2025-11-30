@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Registrar Nova Entrega - Alvorecer Digital</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #eef3ff; margin: 0; padding: 25px; }
+    .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #0056b3; margin-bottom: 20px; }
+    label { font-weight: bold; margin-top: 12px; display: block; }
+    select, input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+    .btn { margin-top: 10px; padding: 12px; background: #0056b3; color: white; border: none; border-radius: 8px; font-size: 17px; cursor: pointer; width: 100%; }
+    .btn:hover { background: #004892; }
+    .btn-add { width: auto; padding: 10px 20px; margin-top: 10px; }
+    .items-table { margin-top: 25px; border-collapse: collapse; width: 100%; }
+    .items-table th, .items-table td { padding: 12px; border-bottom: 1px solid #ccc; text-align: left; }
+    .items-table th { background: #0056b3; color: white; }
+    .btn-finalizar { margin-top: 30px; background: #28a745; font-weight: bold; }
+    .btn-finalizar:hover { background: #1f7e31; }
+    .btn-cancelar { background: #dc3545; margin-top: 10px; }
+    .btn-cancelar:hover { background: #a71d2a; }
+    .btn-inicio { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #b0c4de; text-decoration: none; color: #333; border-radius: 5px; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<a href="../telainicial.html" class="btn-inicio">⬅ Voltar ao Início</a>
+
+<div class="container">
+    <h1>Registrar Nova Entrega</h1>
+
+    <label>Selecionar beneficiário:</label>
+    <select id="beneficiario">
+        <option value="">Carregando...</option>
+    </select>
+
+    <label>Data da entrega:</label>
+    <input type="date" id="dataEntrega">
+
+    <hr style="margin: 25px 0; border: 0; border-top: 1px solid #ccc;">
+
+    <h2>Itens da Entrega</h2>
+    <label>Selecionar item do estoque:</label>
+    <select id="itemEstoque">
+        <option value="">Carregando...</option>
+    </select>
+
+    <label>Quantidade:</label>
+    <input type="number" id="quantidade" min="1" value="1">
+
+    <button class="btn btn-add" onclick="adicionarItemLocal()">+ Adicionar à Lista</button>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Qtd</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody id="listaItens">
+            <tr><td colspan="3" style="text-align:center">Nenhum item adicionado.</td></tr>
+        </tbody>
+    </table>
+
+    <button class="btn btn-finalizar" id="btnFinalizar" onclick="finalizarEntrega()">Finalizar Entrega (Salvar no Banco)</button>
+    <button class="btn btn-cancelar" onclick="cancelar()">Cancelar</button>
+</div>
+
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // CHAVES DE CONEXÃO COM O BANCO DE DADOS
+    const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    let itensCarrinho = []; 
+
+    async function carregarDropdowns() {
+        const { data: beneficiarios } = await supabase.from('beneficiarios').select('id, nome_crianca').order('nome_crianca');
+        const selectBen = document.getElementById("beneficiario");
+        if(beneficiarios) {
+            selectBen.innerHTML = '<option value="">Selecione...</option>';
+            beneficiarios.forEach(b => selectBen.innerHTML += `<option value="${b.id}">${b.nome_crianca}</option>`);
+        }
+
+        const { data: estoque } = await supabase.from('estoque').select('id, nome_item, quantidade').gt('quantidade', 0).order('nome_item');
+        const selectEst = document.getElementById("itemEstoque");
+        if(estoque) {
+            selectEst.innerHTML = '<option value="">Selecione...</option>';
+            estoque.forEach(e => {
+                selectEst.innerHTML += `<option value="${e.id}" data-nome="${e.nome_item}" data-qtd-atual="${e.quantidade}">
+                    ${e.nome_item} (Disp: ${e.quantidade})
+                </option>`;
+            });
+        }
+    }
+
+    window.adicionarItemLocal = function() {
+        const select = document.getElementById("itemEstoque");
+        const id = select.value;
+        const nome = select.options[select.selectedIndex].getAttribute('data-nome');
+        const qtdDisponivel = parseInt(select.options[select.selectedIndex].getAttribute('data-qtd-atual'));
+        const qtdSolicitada = parseInt(document.getElementById("quantidade").value);
+
+        if(!id || qtdSolicitada < 1) { alert("Selecione item e quantidade."); return; }
+        
+        if(qtdSolicitada > qtdDisponivel) {
+            alert(`Erro: Você só tem ${qtdDisponivel} unidades deste item no estoque!`);
+            return;
+        }
+
+        itensCarrinho.push({ id_estoque: id, nome: nome, quantidade: qtdSolicitada, qtd_anterior: qtdDisponivel });
+        atualizarTabelaVisual();
+    }
+
+    function atualizarTabelaVisual() {
+        const tbody = document.getElementById("listaItens");
+        tbody.innerHTML = "";
+        itensCarrinho.forEach((item, index) => {
+            tbody.innerHTML += `<tr><td>${item.nome}</td><td>${item.quantidade}</td><td><button onclick="removerItem(${index})">X</button></td></tr>`;
+        });
+    }
+
+    window.removerItem = function(index) { itensCarrinho.splice(index, 1); atualizarTabelaVisual(); }
+
+    window.finalizarEntrega = async function() {
+        const benId = document.getElementById("beneficiario").value;
+        const data = document.getElementById("dataEntrega").value;
+        const btn = document.getElementById("btnFinalizar");
+
+        if(!benId || !data || itensCarrinho.length === 0) { alert("Preencha tudo."); return; }
+
+        btn.innerText = "Salvando e Baixando Estoque...";
+        
+        const { data: entregaCriada, error: erroEntrega } = await supabase
+            .from('entregas')
+            .insert([{ beneficiario_id: benId, data_entrega: data }])
+            .select();
+
+        if(erroEntrega) { alert("Erro: " + erroEntrega.message); return; }
+        const idEntrega = entregaCriada[0].id;
+
+        for (const item of itensCarrinho) {
+            await supabase.from('itens_entrega').insert([{
+                entrega_id: idEntrega,
+                item_estoque_id: item.id_estoque,
+                quantidade: item.quantidade,
+                nome_item_snapshot: item.nome
+            }]);
+
+            const novaQtd = item.qtd_anterior - item.quantidade;
+            await supabase.from('estoque').update({ quantidade: novaQtd }).eq('id', item.id_estoque);
+        }
+
+        alert("✅ Entrega realizada e Estoque descontado!");
+        window.location.href = "listaentregas.html";
+    }
+
+    window.cancelar = function() { window.location.href = "../telainicial.html"; }
+    carregarDropdowns();
+</script>
+</body>
+</html>

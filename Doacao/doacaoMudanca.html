@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Alvorecer Digital - Registrar Compra/Ajuste</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #eaf2ff; margin: 0; padding: 20px; }
+    .btn-inicio { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #b0c4de; text-decoration: none; color: #333; border-radius: 5px; font-weight: bold; }
+    header { background: #1e4f9a; color: white; text-align: center; padding: 15px; font-size: 24px; font-weight: bold; border-radius: 8px;}
+    .container { width: 90%; max-width: 600px; margin: 25px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #0003; }
+    label { font-weight: bold; margin-top: 15px; display: block; }
+    input, select { width: 100%; padding: 10px; margin: 5px 0 0 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    button { background: #1e4f9a; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 20px; font-weight: bold; }
+    button:hover { background: #163d78; }
+    .btn-cancelar { background: #dc3545; margin-top: 10px; }
+    .btn-cancelar:hover { background: #a71d2a; }
+</style>
+</head>
+<body>
+
+<a href="../telainicial.html" class="btn-inicio">⬅ Voltar ao Início</a>
+
+<header>Entrada de Estoque (Compras/Outros)</header>
+
+<div class="container">
+    <h2>Registrar Item</h2>
+    <p style="color: #666; font-size: 14px;">Use esta tela para registrar itens comprados pela ONG ou ajustes de inventário.</p>
+
+    <form id="formCompra">
+        <label>Categoria</label>
+        <select id="categoria">
+            <option value="Alimento">Alimento</option>
+            <option value="Roupa">Roupa</option>
+            <option value="Brinquedo">Brinquedo</option>
+            <option value="Higiene">Higiene</option>
+            <option value="Outros">Outros</option>
+        </select>
+
+        <label>Descrição do Item</label>
+        <input type="text" id="item" placeholder="Ex: Pacote de Fraldas G" required />
+
+        <label>Quantidade</label>
+        <input type="number" id="quantidade" placeholder="Ex: 10" min="1" required />
+
+        <label>Origem (De onde veio?)</label>
+        <select id="origem">
+            <option value="Compra">Compra (Recursos Próprios)</option>
+            <option value="Doação Anônima">Doação Anônima (Sem cadastro)</option>
+            <option value="Ajuste">Ajuste de Inventário</option>
+        </select>
+
+        <label>Data da Entrada</label>
+        <input type="date" id="dataEntrada" required />
+
+        <button type="submit" id="btnSalvar">Salvar no Estoque</button>
+        <button type="button" class="btn-cancelar" onclick="window.location.href='../telainicial.html'">Cancelar</button>
+    </form>
+</div>
+
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // CHAVES DE CONEXÃO COM O BANCO DE DADOS
+    const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    const form = document.getElementById("formCompra");
+    const btn = document.getElementById("btnSalvar");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const item = document.getElementById("item").value;
+        const categoria = document.getElementById("categoria").value;
+        const quantidade = document.getElementById("quantidade").value;
+        const origem = document.getElementById("origem").value;
+        const data = document.getElementById("dataEntrada").value;
+
+        btn.innerText = "Salvando...";
+
+        // Inserir direto no estoque
+        const { error } = await supabase
+            .from('estoque')
+            .insert([{
+                nome_item: item,
+                categoria: categoria,
+                quantidade: quantidade,
+                origem: origem,
+                data_entrada: data
+            }]);
+
+        if (error) {
+            alert("Erro ao salvar: " + error.message);
+            btn.innerText = "Salvar no Estoque";
+        } else {
+            alert("✅ Item registrado com sucesso!");
+            window.location.href = "../Estoque/estoquegeral.html"; // Vai para o estoque conferir
+        }
+    });
+</script>
+
+</body>
+</html>

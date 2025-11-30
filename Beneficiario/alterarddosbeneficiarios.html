@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro de Beneficiário - Alvorecer Digital</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f4ff; margin: 0; padding: 20px; }
+        .container { max-width: 600px; background: #fff; margin: auto; padding: 25px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #0056b3; margin-bottom: 25px; }
+        label { font-weight: bold; margin-top: 10px; display: block; }
+        input, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
+        textarea { height: 90px; resize: none; }
+        .btn { margin-top: 20px; width: 100%; padding: 12px; background: #007bff; border: none; color: white; font-size: 17px; font-weight: bold; border-radius: 7px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .btn-cancelar { background: #dc3545; margin-top: 10px; }
+        .btn-cancelar:hover { background: #a71d2a; }
+        .btn-inicio { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #e0e0e0; text-decoration: none; color: #333; border-radius: 5px; font-weight: bold; }
+        .loading { opacity: 0.6; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<a href="../telainicial.html" class="btn-inicio">⬅ Voltar ao Início</a>
+
+<div class="container">
+    <h1>Cadastro de Beneficiário</h1>
+
+    <form id="formBeneficiario">
+        <label>Nome da criança</label>
+        <input type="text" id="nome_crianca" required>
+
+        <label>Idade</label>
+        <input type="number" id="idade" required>
+
+        <label>Nome do responsável</label>
+        <input type="text" id="nome_responsavel" required>
+
+        <label>Telefone</label>
+        <input type="text" id="telefone" placeholder="(00) 00000-0000">
+
+        <label>Endereço</label>
+        <input type="text" id="endereco">
+
+        <label>Observações</label>
+        <textarea id="observacoes"></textarea>
+
+        <button type="submit" class="btn" id="btnSalvar">Salvar no Banco</button>
+        <button type="button" class="btn btn-cancelar" onclick="cancelar()">Cancelar</button>
+    </form>
+</div>
+
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // CHAVES DE CONEXÃO COM O BANCO DE DADOS
+        const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+    const form = document.getElementById('formBeneficiario');
+    const btnSalvar = document.getElementById('btnSalvar');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const dados = {
+            nome_crianca: document.getElementById("nome_crianca").value,
+            idade: document.getElementById("idade").value,
+            nome_responsavel: document.getElementById("nome_responsavel").value,
+            telefone: document.getElementById("telefone").value,
+            endereco: document.getElementById("endereco").value,
+            observacoes: document.getElementById("observacoes").value
+        };
+
+        btnSalvar.innerText = "Salvando...";
+        form.classList.add("loading");
+
+        const { error } = await supabase
+            .from('beneficiarios')
+            .insert([dados]);
+
+        form.classList.remove("loading");
+        btnSalvar.innerText = "Salvar no Banco";
+
+        if (error) {
+            alert("Erro ao salvar: " + error.message);
+            console.error(error);
+        } else {
+            alert("✅ Beneficiário cadastrado com sucesso!");
+            window.location.href = "listaBeneficiarios.html";
+        }
+    });
+
+    window.cancelar = function() {
+        if (confirm("Deseja cancelar?")) window.location.href = "listaBeneficiarios.html";
+    }
+</script>
+
+</body>
+</html>
