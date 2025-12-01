@@ -13,7 +13,10 @@
         .btn { background: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 15px; }
         .btn:hover { background: #0056b3; }
         .btn-inicio { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #e0e0e0; text-decoration: none; color: #333; border-radius: 5px; font-weight: bold; }
-        .delete-btn { background: #dc3545; color: #fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;}
+        
+        .btn-acao { padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; font-weight: bold; color: white; }
+        .btn-editar { background: #28a745; }
+        .btn-excluir { background: #dc3545; }
     </style>
 </head>
 <body>
@@ -22,7 +25,8 @@
 
     <div class="container">
         <h1>Beneficiários (Banco de Dados)</h1>
-        <button class="btn" onclick="window.location.href='alterarddosbeneficiarios.html'">Cadastrar Beneficiário</button>
+        
+        <button class="btn" onclick="window.location.href='alterarddosbeneficiarios.html'">+ Cadastrar Beneficiário</button>
 
         <table>
             <thead>
@@ -43,7 +47,7 @@
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // CHAVES DE CONEXÃO COM O BANCO DE DADOS
+        // CHAVES DE CONEXÃO COM O BANCO DE DADOS
         const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
         const supabase = createClient(supabaseUrl, supabaseKey)
@@ -76,7 +80,9 @@
                     <td>${b.idade}</td>
                     <td>${b.endereco}</td>
                     <td>
-                        <button class="delete-btn" onclick="excluir(${b.id})">Excluir</button>
+                        <button class="btn-acao btn-editar" onclick="window.location.href='alterarddosbeneficiarios.html?id=${b.id}'">Editar</button>
+                        
+                        <button class="btn-acao btn-excluir" onclick="excluir(${b.id})">Excluir</button>
                     </td>
                 `;
                 tabela.appendChild(linha);
@@ -86,8 +92,18 @@
         window.excluir = async function(id) {
             if (confirm("Deseja realmente excluir este beneficiário?")) {
                 const { error } = await supabase.from('beneficiarios').delete().eq('id', id);
-                if (!error) carregarTabela();
-                else alert("Erro: " + error.message);
+                
+                if (error) {
+                    // Proteção contra exclusão se tiver entregas vinculadas
+                    if (error.code === '23503') {
+                        alert("🚫 IMPOSSÍVEL EXCLUIR!\n\nEsta criança/família já recebeu entregas registradas.\nPara manter o histórico, o registro não pode ser apagado.");
+                    } else {
+                        alert("Erro: " + error.message);
+                    }
+                } else {
+                    alert("✅ Excluído com sucesso!");
+                    carregarTabela();
+                }
             }
         }
 

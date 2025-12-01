@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Cadastro de Beneficiário - Alvorecer Digital</title>
     <style>
+        /* CSS Padrão */
         body { font-family: Arial, sans-serif; background: #f0f4ff; margin: 0; padding: 20px; }
         .container { max-width: 600px; background: #fff; margin: auto; padding: 25px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #0056b3; margin-bottom: 25px; }
@@ -23,9 +24,11 @@
 <a href="../telainicial.html" class="btn-inicio">⬅ Voltar ao Início</a>
 
 <div class="container">
-    <h1>Cadastro de Beneficiário</h1>
+    <h1 id="tituloTela">Cadastro de Beneficiário</h1>
 
     <form id="formBeneficiario">
+        <input type="hidden" id="idBeneficiario">
+
         <label>Nome da criança</label>
         <input type="text" id="nome_crianca" required>
 
@@ -59,10 +62,42 @@
 
     const form = document.getElementById('formBeneficiario');
     const btnSalvar = document.getElementById('btnSalvar');
+    const tituloTela = document.getElementById("tituloTela");
 
+    // --- 1. VERIFICAR SE É EDIÇÃO ---
+    async function verificarEdicao() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+
+        if (id) {
+            tituloTela.innerText = "Editar Beneficiário";
+            btnSalvar.innerText = "Atualizar Dados";
+            document.getElementById("idBeneficiario").value = id;
+
+            // Busca dados atuais
+            const { data, error } = await supabase
+                .from('beneficiarios')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (data) {
+                document.getElementById("nome_crianca").value = data.nome_crianca;
+                document.getElementById("idade").value = data.idade;
+                document.getElementById("nome_responsavel").value = data.nome_responsavel;
+                document.getElementById("telefone").value = data.telefone;
+                document.getElementById("endereco").value = data.endereco;
+                document.getElementById("observacoes").value = data.observacoes;
+            }
+        }
+    }
+
+    // --- 2. SALVAR ---
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const id = document.getElementById("idBeneficiario").value;
+        
         const dados = {
             nome_crianca: document.getElementById("nome_crianca").value,
             idade: document.getElementById("idade").value,
@@ -75,25 +110,40 @@
         btnSalvar.innerText = "Salvando...";
         form.classList.add("loading");
 
-        const { error } = await supabase
-            .from('beneficiarios')
-            .insert([dados]);
+        let error = null;
+
+        if (id) {
+            // MODO UPDATE
+            const response = await supabase
+                .from('beneficiarios')
+                .update(dados)
+                .eq('id', id);
+            error = response.error;
+        } else {
+            // MODO INSERT
+            const response = await supabase
+                .from('beneficiarios')
+                .insert([dados]);
+            error = response.error;
+        }
 
         form.classList.remove("loading");
-        btnSalvar.innerText = "Salvar no Banco";
+        btnSalvar.innerText = id ? "Atualizar Dados" : "Salvar no Banco";
 
         if (error) {
             alert("Erro ao salvar: " + error.message);
             console.error(error);
         } else {
-            alert("✅ Beneficiário cadastrado com sucesso!");
+            alert("✅ Beneficiário salvo com sucesso!");
             window.location.href = "listaBeneficiarios.html";
         }
     });
 
     window.cancelar = function() {
-        if (confirm("Deseja cancelar?")) window.location.href = "listaBeneficiarios.html";
+        window.location.href = "listaBeneficiarios.html";
     }
+
+    verificarEdicao();
 </script>
 
 </body>

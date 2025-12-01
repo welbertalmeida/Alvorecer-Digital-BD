@@ -24,11 +24,11 @@
 
     <header class="topo">
         <h1>Alvorecer Digital</h1>
-        <h2>Cadastro de Doador</h2>
-    </header>
+        <h2 id="tituloTela">Cadastro de Doador</h2> </header>
 
     <main class="form-container">
         <form id="formDoador" class="formulario">
+            <input type="hidden" id="idDoador">
 
             <label>Nome Completo</label>
             <input type="text" id="nome">
@@ -47,70 +47,94 @@
 
             <button type="submit" class="btn-primario" id="btnSalvar">Salvar Doador</button>
             <button type="button" class="btn-cancelar" onclick="cancelar()">Cancelar</button>
-
         </form>
     </main>
 
     <script type="module">
-        // 1. Importar o Supabase direto da internet (CDN)
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-            // CHAVES DE CONEXÃO COM O BANCO DE DADOS
-
+       // CHAVES DE CONEXÃO COM O BANCO DE DADOS
         const supabaseUrl = 'https://qmbkynoymgmwjxjelkoc.supabase.co'
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtYmt5bm95bWdtd2p4amVsa29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTkzMjgsImV4cCI6MjA3OTgzNTMyOH0.1aS3mB0md0T2BLMfYasCA9ZCgybvKEjV0qXZE6FV_wA'
         const supabase = createClient(supabaseUrl, supabaseKey)
 
         const form = document.getElementById('formDoador');
         const btnSalvar = document.getElementById('btnSalvar');
+        const tituloTela = document.getElementById("tituloTela");
 
+        async function verificarEdicao() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
+            if (id) {
+                tituloTela.innerText = "Editar Doador";
+                btnSalvar.innerText = "Atualizar Cadastro";
+                document.getElementById("idDoador").value = id;
+
+                const { data, error } = await supabase
+                    .from('doadores')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (data) {
+                    document.getElementById("nome").value = data.nome;
+                    document.getElementById("cpf").value = data.cpf;
+                    document.getElementById("telefone").value = data.telefone;
+                    document.getElementById("endereco").value = data.endereco;
+                    document.getElementById("email").value = data.email;
+                }
+            }
+        }
+
+        // --- 2. SALVAR (INSERT ou UPDATE) ---
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            const id = document.getElementById("idDoador").value;
             const nome = document.getElementById("nome").value;
             const cpf = document.getElementById("cpf").value;
             const telefone = document.getElementById("telefone").value;
             const endereco = document.getElementById("endereco").value;
             const email = document.getElementById("email").value;
 
-            if (!nome || !cpf) {
-                alert("⚠️ Nome e CPF são obrigatórios!");
-                return;
-            }
+            if (!nome || !cpf) { alert("Nome e CPF são obrigatórios!"); return; }
 
             btnSalvar.innerText = "Salvando...";
             form.classList.add("loading");
 
-            // 4. Enviando para o Supabase
-            const { data, error } = await supabase
-                .from('doadores') // Nome da tabela SQL
-                .insert([
-                    { 
-                        nome: nome, 
-                        cpf: cpf, 
-                        telefone: telefone, 
-                        endereco: endereco, 
-                        email: email 
-                    }
-                ])
+            let error = null;
+
+            if (id) {
+                // --- MODO UPDATE (Atualizar) ---
+                const response = await supabase
+                    .from('doadores')
+                    .update({ nome, cpf, telefone, endereco, email })
+                    .eq('id', id);
+                error = response.error;
+            } else {
+                const response = await supabase
+                    .from('doadores')
+                    .insert([{ nome, cpf, telefone, endereco, email }]);
+                error = response.error;
+            }
 
             form.classList.remove("loading");
-            btnSalvar.innerText = "Salvar Doador";
 
             if (error) {
-                console.error(error);
                 alert("Erro ao salvar: " + error.message);
+                btnSalvar.innerText = id ? "Atualizar Cadastro" : "Salvar Doador";
             } else {
-                alert("✅ Doador salvo no banco de dados!");
+                alert("✅ Sucesso!");
                 window.location.href = "doador.html";
             }
         });
 
         window.cancelar = function() {
-            if(confirm("Deseja cancelar o cadastro?")) {
-                window.location.href = "doador.html";
-            }
+            window.location.href = "doador.html";
         }
+
+        verificarEdicao();
     </script>
 
 </body>

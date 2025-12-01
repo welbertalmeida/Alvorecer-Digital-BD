@@ -81,11 +81,15 @@
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const doadorId = document.getElementById("doador").value;
+        const selectDoador = document.getElementById("doador");
+        const doadorId = selectDoador.value;
+        
+        const nomeDoador = selectDoador.options[selectDoador.selectedIndex].text;
+
         const dataDoacao = document.getElementById("dataDoacao").value;
         const categoria = document.getElementById("categoria").value;
         const descricao = document.getElementById("descricao").value;
-        const quantidade = parseInt(document.getElementById("quantidade").value); // Importante ser número
+        const quantidade = parseInt(document.getElementById("quantidade").value);
 
         if (!doadorId) { alert("Selecione um doador."); return; }
 
@@ -107,19 +111,21 @@
             return;
         }
 
-
+        //ATUALIZAR O ESTOQUE COM O NOME DO DOADOR
         const { error: erroEstoque } = await supabase
             .from('estoque')
             .insert([{
-                nome_item: descricao, 
+                nome_item: descricao,
                 categoria: categoria,
                 quantidade: quantidade,
-                origem: 'Doação',
+                
+                origem: `Doação - ${nomeDoador}`, 
+                
                 data_entrada: dataDoacao
             }]);
 
         if (erroEstoque) {
-            alert("Doação salva, mas erro ao atualizar estoque: " + erroEstoque.message);
+            alert("Erro ao atualizar estoque: " + erroEstoque.message);
         } else {
             alert("✅ Doação registrada e Estoque atualizado!");
             window.location.href = "../telainicial.html";
